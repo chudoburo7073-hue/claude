@@ -1,0 +1,513 @@
+<title>Когда я последний раз</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: one narrow column of "counters" — each chore is a row with a big days-since number, a rhythm bar and one tap target. */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --ink: #141c28;
+  --muted: #5a687b;
+  --line: #d8dee7;
+  --accent: #2f45d6;
+  --accent-ink: #ffffff;
+  --ok: #1d8a57;
+  --soon: #b77a00;
+  --late: #d23f36;
+  --late-bg: #fdecea;
+  --soon-bg: #fdf3dc;
+  --font-display: "Unbounded", "Golos Text", system-ui, sans-serif;
+  --font-body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #171e28; --ink: #e7ecf3; --muted: #93a0b3; --line: #2a3443;
+    --accent: #8b9aff; --accent-ink: #0e131a; --ok: #4cc38a; --soon: #f0b43c; --late: #ff6b61;
+    --late-bg: #3a1d1c; --soon-bg: #3a2f17; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #171e28; --ink: #e7ecf3; --muted: #93a0b3; --line: #2a3443;
+  --accent: #8b9aff; --accent-ink: #0e131a; --ok: #4cc38a; --soon: #f0b43c; --late: #ff6b61;
+  --late-bg: #3a1d1c; --soon-bg: #3a2f17; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.45; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap { max-width: 640px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 96px; display: grid; gap: 20px; }
+
+.top h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 6vw, 2.2rem); line-height: 1.1; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.top .date { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; }
+.top .sub { margin: 10px 0 0; color: var(--muted); max-width: 52ch; }
+
+.summary { display: flex; flex-wrap: wrap; gap: 8px; }
+.stat { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 0.9rem; }
+.stat b { font-family: var(--font-display); font-weight: 500; font-variant-numeric: tabular-nums; }
+.stat.late b { color: var(--late); }
+.stat.soon b { color: var(--soon); }
+.stat.ok b { color: var(--ok); }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.sync { font-size: 0.8rem; color: var(--muted); }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 14px; font-weight: 500; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--late); }
+.btn.small { padding: 5px 10px; font-size: 0.85rem; }
+.btn.link { border: none; background: none; padding: 4px 0; color: var(--accent); }
+
+.list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.list:empty { display: none; }
+.row { border-top: 1px solid var(--line); }
+.row:first-child { border-top: none; }
+.row-main { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px 16px; }
+.count { text-align: center; }
+.count .n { display: block; font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.count .u { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+.row.late .count .n { color: var(--late); }
+.row.soon .count .n { color: var(--soon); }
+.row.ok .count .n { color: var(--ok); }
+.row.new .count .n, .row.none .count .n { color: var(--muted); }
+
+.name { display: block; width: 100%; text-align: left; border: none; background: none; padding: 0; font-weight: 600; font-size: 1.02rem; overflow-wrap: anywhere; }
+.meta { margin: 2px 0 0; font-size: 0.86rem; color: var(--muted); }
+.meta .st { font-weight: 500; }
+.row.late .meta .st { color: var(--late); }
+.row.soon .meta .st { color: var(--soon); }
+.bar { margin-top: 8px; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; border-radius: 3px; background: var(--ok); transition: width .3s ease; }
+.row.soon .bar span { background: var(--soon); }
+.row.late .bar span { background: var(--late); }
+
+.done { border: 1.5px solid var(--accent); color: var(--accent); background: transparent; border-radius: 999px; padding: 8px 14px; font-weight: 600; white-space: nowrap; }
+.done:hover { background: var(--accent); color: var(--accent-ink); }
+.done[disabled] { border-color: var(--line); color: var(--muted); background: transparent; cursor: default; font-weight: 500; }
+
+.details { padding: 0 16px 16px 94px; display: grid; gap: 14px; }
+.details h3 { margin: 0 0 6px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.hist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.hist li { display: flex; justify-content: space-between; gap: 12px; }
+.hist .gap { color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.field { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.field input { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; font-size: 1rem; color: var(--ink); min-width: 0; width: 100%; }
+.confirm { background: var(--late-bg); border-radius: 10px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); padding: 22px 18px; display: grid; gap: 12px; }
+.empty h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.15rem; margin: 0; }
+.empty p { margin: 0; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 6px 12px; font-size: 0.88rem; }
+.chip small { color: var(--muted); margin-left: 4px; }
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip[aria-pressed="true"] small { color: inherit; opacity: .8; }
+
+.loading { color: var(--muted); margin: 0; }
+
+.sheet { position: fixed; inset: 0; background: rgb(10 14 20 / .45); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet-card { background: var(--surface); width: min(640px, 100%); max-height: 92%; overflow-y: auto; border-radius: 18px 18px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 16px; }
+.sheet-card h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.2rem; margin: 0; }
+.sheet-card .group { display: grid; gap: 8px; }
+.sheet-card .label { font-size: 0.85rem; font-weight: 500; }
+.sheet-card .hint { font-size: 0.8rem; color: var(--muted); margin: 0; }
+.sheet-foot { display: flex; justify-content: flex-end; gap: 8px; }
+@media (min-width: 700px) { .sheet { align-items: center; } .sheet-card { border-radius: 18px; } }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); border-radius: 12px; padding: 10px 14px; display: flex; gap: 14px; align-items: center; max-width: calc(100% - 32px); box-shadow: 0 6px 24px rgb(0 0 0 / .2); z-index: 20; font-size: 0.92rem; }
+.toast button { background: none; border: none; color: inherit; font-weight: 600; text-decoration: underline; padding: 0; }
+
+@media (max-width: 480px) {
+  .row-main { grid-template-columns: 52px minmax(0, 1fr); gap: 4px 12px; }
+  .count { grid-row: span 2; align-self: start; padding-top: 2px; }
+  .done { justify-self: start; margin-top: 8px; }
+  .details { padding-left: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="date" id="today"></p>
+    <h1>Когда я последний раз…</h1>
+    <p class="sub">Дела без расписания: сменить щётку, полить цветы, позвонить родителям. Отмечайте, когда сделали, и приложение само поймёт ваш ритм и подскажет, что пора.</p>
+  </header>
+
+  <section class="summary" id="summary" aria-live="polite"></section>
+
+  <div class="toolbar">
+    <button class="btn primary" id="addBtn" type="button">+ Новое дело</button>
+    <span class="sync" id="syncNote"></span>
+  </div>
+
+  <p class="loading" id="loading">Загружаю ваши дела…</p>
+  <ul class="list" id="list"></ul>
+
+  <section class="empty" id="empty" hidden>
+    <h2>Пока пусто</h2>
+    <p>Нажмите на любое дело ниже, чтобы добавить его, или создайте своё.</p>
+    <div class="chips" id="emptyPresets"></div>
+  </section>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <form class="sheet-card" id="form" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <h2 id="formTitle">Новое дело</h2>
+    <div class="group">
+      <span class="label">Быстрый выбор</span>
+      <div class="chips" id="sheetPresets"></div>
+    </div>
+    <label class="field"><span class="label">Что делаем</span>
+      <input id="fName" name="name" required maxlength="80" placeholder="Например, поменять фильтр в кувшине" autocomplete="off">
+    </label>
+    <div class="group">
+      <span class="label">Как часто</span>
+      <div class="chips" id="intervalChips"></div>
+      <label class="field">Или своё число дней
+        <input id="fInterval" name="interval" type="number" min="1" max="3650" inputmode="numeric" placeholder="пусто: приложение посчитает само">
+      </label>
+    </div>
+    <div class="group">
+      <span class="label">Когда было в последний раз</span>
+      <div class="chips" id="lastChips"></div>
+      <label class="field" id="lastDateField" hidden>Дата
+        <input id="fLastDate" type="date">
+      </label>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn" type="button" id="cancelBtn">Отмена</button>
+      <button class="btn primary" type="submit">Добавить</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  const DAY = 864e5;
+  const LS_KEY = "kyap.items.v1";
+  const MAX_HISTORY = 60;
+  const DAY_FORMS = ["день", "дня", "дней"];
+  const MONTHS = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+  const MONTHS_FULL = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+  const WEEKDAYS = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
+  const PRESETS = [
+    ["Поменять зубную щётку", 90],
+    ["Сменить постельное бельё", 14],
+    ["Полить цветы", 7],
+    ["Позвонить родителям", 7],
+    ["Почистить чайник от накипи", 30],
+    ["Поменять фильтр для воды", 60],
+    ["Постричься", 35],
+    ["Помыть холодильник", 30],
+    ["Почистить фильтр пылесоса", 30],
+    ["Пройти чекап у врача", 365],
+  ];
+  const INTERVALS = [[null, "Посчитать само"], [7, "Неделя"], [14, "2 недели"], [30, "Месяц"], [90, "3 месяца"], [180, "Полгода"], [365, "Год"]];
+  const EVERY = { 1: "каждый день", 7: "раз в неделю", 14: "раз в две недели", 30: "раз в месяц", 60: "раз в два месяца", 90: "раз в три месяца", 180: "раз в полгода", 365: "раз в год" };
+
+  const $ = (s) => document.querySelector(s);
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) {
+      if (c == null || c === false) continue;
+      el.append(c.nodeType ? c : document.createTextNode(String(c)));
+    }
+    return el;
+  }
+  const plural = (n, f) => { const a = Math.abs(n) % 100, b = a % 10; return f[a > 10 && a < 20 ? 2 : b === 1 ? 0 : b >= 2 && b <= 4 ? 1 : 2]; };
+  const days = (n) => n + " " + plural(n, DAY_FORMS);
+  const sod = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const daysBetween = (a, b) => Math.round((sod(b) - sod(a)) / DAY);
+  const fmtDate = (t) => { const d = new Date(t); const y = d.getFullYear(); return d.getDate() + " " + MONTHS[d.getMonth()] + (y !== new Date().getFullYear() ? " " + y : ""); };
+  const every = (n) => EVERY[n] || "раз в " + days(n);
+  const newId = () => "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const isoDate = (t) => { const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const fromIsoDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d, 12).getTime(); };
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+
+  function learnedInterval(hist) {
+    if (hist.length < 2) return null;
+    const gaps = [];
+    for (let i = 1; i < hist.length; i++) { const g = daysBetween(hist[i - 1], hist[i]); if (g > 0) gaps.push(g); }
+    const g = gaps.slice(-6).sort((a, b) => a - b);
+    if (!g.length) return null;
+    const mid = g.length >> 1;
+    return Math.max(1, Math.round(g.length % 2 ? g[mid] : (g[mid - 1] + g[mid]) / 2));
+  }
+
+  function info(item, now) {
+    const hist = item.history || [];
+    const last = hist.length ? hist[hist.length - 1] : null;
+    const since = last == null ? null : daysBetween(last, now);
+    const learned = learnedInterval(hist);
+    const interval = item.target || learned;
+    let status = "none", ratio = null, left = null;
+    if (since == null) status = "new";
+    else if (interval) {
+      ratio = since / interval;
+      left = interval - since;
+      status = left < 0 ? "late" : left <= Math.max(1, Math.round(interval * 0.15)) ? "soon" : "ok";
+    }
+    return { last, since, learned, interval, ratio, left, status };
+  }
+
+  const RANK = { late: 0, soon: 1, new: 2, ok: 3, none: 4 };
+  function sortKey(a, b) {
+    if (RANK[a.i.status] !== RANK[b.i.status]) return RANK[a.i.status] - RANK[b.i.status];
+    if (a.i.ratio != null && b.i.ratio != null) return b.i.ratio - a.i.ratio;
+    if (a.i.since != null && b.i.since != null) return b.i.since - a.i.since;
+    return (a.item.createdAt || 0) - (b.item.createdAt || 0);
+  }
+
+  // ---------- storage: the viewer's own account (db) when available, else this browser ----------
+  const Store = {
+    mode: "local", items: {}, col: null, queues: {}, loaded: false,
+    put(item) { this.items[item.id] = item; render(); this.persist(item.id, false); },
+    remove(id) { delete this.items[id]; render(); this.persist(id, true); },
+    persist(id, del) {
+      if (this.mode === "local") { saveLocal(); return; }
+      const ref = this.col.doc(id);
+      const data = del ? null : clone(this.items[id]);
+      this.queues[id] = (this.queues[id] || Promise.resolve())
+        .then(() => (del ? ref.delete() : ref.set(data)))
+        .catch((e) => toast(e && e.code === "quota_exceeded"
+          ? "Место закончилось: удалите несколько дел и попробуйте снова."
+          : e && e.code === "invalid_argument"
+            ? "Не получилось сохранить: у этой ссылки нет прав на запись."
+            : "Не получилось сохранить. Проверьте соединение и повторите."));
+    },
+  };
+  function loadLocal() {
+    try { const raw = localStorage.getItem(LS_KEY); Store.items = raw ? JSON.parse(raw) || {} : {}; } catch (e) { Store.items = {}; }
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(Store.items)); } catch (e) { toast("Браузер не дал сохранить данные."); }
+  }
+
+  // ---------- UI state ----------
+  const ui = { open: null, edit: null, confirm: null, undo: null };
+
+  function render() {
+    const now = Date.now();
+    const d = new Date(now);
+    $("#today").textContent = "Сегодня, " + WEEKDAYS[d.getDay()] + ", " + d.getDate() + " " + MONTHS_FULL[d.getMonth()];
+    $("#loading").hidden = Store.loaded;
+    const rows = Object.values(Store.items).map((item) => ({ item, i: info(item, now) })).sort(sortKey);
+    const counts = { late: 0, soon: 0, ok: 0 };
+    rows.forEach((r) => { if (r.i.status in counts) counts[r.i.status]++; });
+
+    const sum = $("#summary");
+    sum.replaceChildren();
+    if (Store.loaded && rows.length) {
+      if (counts.late) sum.append(h("span", { class: "stat late" }, h("b", { text: counts.late }), "просрочено"));
+      if (counts.soon) sum.append(h("span", { class: "stat soon" }, h("b", { text: counts.soon }), "скоро"));
+      sum.append(h("span", { class: "stat ok" }, h("b", { text: counts.ok }), "по графику"));
+      sum.append(h("span", { class: "stat" }, h("b", { text: rows.length }), "всего"));
+    }
+
+    $("#empty").hidden = !Store.loaded || rows.length > 0;
+    const list = $("#list");
+    list.replaceChildren(...(Store.loaded ? rows.map(renderRow) : []));
+  }
+
+  function renderRow({ item, i }) {
+    const open = ui.open === item.id;
+    let n, u;
+    if (i.since == null) { n = "—"; u = "не отмечено"; }
+    else if (i.since === 0) { n = "0"; u = "сегодня"; }
+    else { n = String(i.since); u = plural(i.since, DAY_FORMS) + " назад"; }
+
+    let st;
+    if (i.status === "late") st = "просрочено на " + days(-i.left);
+    else if (i.status === "soon") st = i.left === 0 ? "сегодня по графику" : "пора через " + days(i.left);
+    else if (i.status === "ok") st = "следующий раз через " + days(i.left);
+    else if (i.status === "new") st = "отметьте, когда сделаете";
+    else st = "ритм появится после второй отметки";
+    const rhythm = item.target ? every(item.target) : i.learned ? every(i.learned) + " (по вашей истории)" : "";
+    const lastTxt = i.last != null ? "последний раз " + fmtDate(i.last) : "";
+
+    const main = h("div", { class: "row-main" },
+      h("div", { class: "count", "aria-hidden": "true" }, h("span", { class: "n", text: n }), h("span", { class: "u", text: u })),
+      h("div", {},
+        h("button", { class: "name", type: "button", "aria-expanded": String(open), onclick: () => { ui.open = open ? null : item.id; ui.edit = ui.confirm = null; render(); } }, item.name),
+        h("p", { class: "meta" }, h("span", { class: "st", text: st }), [rhythm, lastTxt].filter(Boolean).map((t) => " · " + t).join("")),
+        i.ratio != null ? h("div", { class: "bar", role: "img", "aria-label": "Прошло " + Math.round(i.ratio * 100) + "% интервала" }, h("span", { style: "width:" + Math.min(100, Math.round(i.ratio * 100)) + "%" })) : null),
+      i.since === 0
+        ? h("button", { class: "done", type: "button", disabled: true }, "Сделано сегодня")
+        : h("button", { class: "done", type: "button", onclick: () => markDone(item.id, Date.now()) }, "Сделал"));
+    return h("li", { class: "row " + i.status }, main, open ? renderDetails(item, i) : null);
+  }
+
+  function renderDetails(item, i) {
+    const box = h("div", { class: "details" });
+    if (ui.edit === item.id) {
+      const nameIn = h("input", { id: "edit-name-" + item.id, value: item.name, maxlength: "80" });
+      const intIn = h("input", { id: "edit-int-" + item.id, type: "number", min: "1", max: "3650", inputmode: "numeric", value: item.target || "", placeholder: "пусто: посчитать само" });
+      box.append(
+        h("label", { class: "field" }, "Название", nameIn),
+        h("label", { class: "field" }, "Интервал в днях", intIn),
+        h("div", { class: "actions" },
+          h("button", { class: "btn primary small", type: "button", onclick: () => {
+            const name = nameIn.value.trim();
+            if (!name) { nameIn.focus(); return; }
+            const t = parseInt(intIn.value, 10);
+            const next = clone(item); next.name = name; next.target = t > 0 ? Math.min(t, 3650) : null;
+            ui.edit = null; Store.put(next); toast("Сохранено");
+          } }, "Сохранить"),
+          h("button", { class: "btn small", type: "button", onclick: () => { ui.edit = null; render(); } }, "Отмена")));
+      return box;
+    }
+
+    const hist = (item.history || []).slice();
+    const histList = h("ul", { class: "hist" });
+    const shown = hist.slice(-8).reverse();
+    shown.forEach((t, k) => {
+      const idx = hist.length - 1 - k;
+      const gap = idx > 0 ? daysBetween(hist[idx - 1], t) : null;
+      histList.append(h("li", {}, h("span", { text: fmtDate(t) }), h("span", { class: "gap", text: gap != null ? "через " + days(gap) : "первая отметка" })));
+    });
+    box.append(h("div", {}, h("h3", { text: "История" }), hist.length ? histList : h("p", { class: "meta", text: "Отметок ещё нет." })));
+
+    const dateIn = h("input", { id: "past-" + item.id, type: "date", max: isoDate(Date.now()), value: isoDate(Date.now() - DAY) });
+    box.append(h("div", { class: "actions" },
+      h("label", { class: "field" }, "Сделал раньше, отметить дату", dateIn),
+      h("button", { class: "btn small", type: "button", style: "align-self:end", onclick: () => { if (dateIn.value) markDone(item.id, fromIsoDate(dateIn.value)); } }, "Отметить")));
+
+    if (ui.confirm === item.id) {
+      box.append(h("div", { class: "confirm" }, "Удалить «" + item.name + "» вместе с историей?",
+        h("button", { class: "btn danger small", type: "button", onclick: () => { ui.confirm = ui.open = null; Store.remove(item.id); toast("Удалено"); } }, "Удалить"),
+        h("button", { class: "btn small", type: "button", onclick: () => { ui.confirm = null; render(); } }, "Отмена")));
+    } else {
+      box.append(h("div", { class: "actions" },
+        h("button", { class: "btn small", type: "button", onclick: () => { ui.edit = item.id; render(); } }, "Изменить"),
+        hist.length ? h("button", { class: "btn small", type: "button", onclick: () => {
+          const prev = clone(item); const next = clone(item); next.history.pop(); Store.put(next);
+          toast("Последняя отметка убрана", () => Store.put(prev));
+        } }, "Убрать последнюю отметку") : null,
+        h("button", { class: "btn danger small", type: "button", onclick: () => { ui.confirm = item.id; render(); } }, "Удалить")));
+    }
+    return box;
+  }
+
+  function markDone(id, t) {
+    const item = Store.items[id];
+    if (!item) return;
+    const prev = clone(item);
+    const next = clone(item);
+    next.history = (next.history || []).concat(t).sort((a, b) => a - b).slice(-MAX_HISTORY);
+    Store.put(next);
+    const when = daysBetween(t, Date.now());
+    toast("«" + item.name + "» отмечено " + (when === 0 ? "сегодня" : fmtDate(t)), () => Store.put(prev));
+  }
+
+  function addItem(name, target, lastTs) {
+    const item = { id: newId(), name, target: target || null, history: lastTs ? [lastTs] : [], createdAt: Date.now() };
+    Store.put(item);
+    return item;
+  }
+
+  // ---------- toast with optional undo ----------
+  let toastTimer = null;
+  function toast(msg, undo) {
+    const el = $("#toast");
+    el.replaceChildren(h("span", { text: msg }));
+    if (undo) el.append(h("button", { type: "button", onclick: () => { undo(); el.hidden = true; } }, "Отменить"));
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, undo ? 6000 : 2500);
+  }
+
+  // ---------- add sheet ----------
+  const form = { interval: null, last: "never" };
+  function chip(label, sub, pressed, onclick) {
+    return h("button", { class: "chip", type: "button", "aria-pressed": pressed == null ? null : String(pressed), onclick }, label, sub ? h("small", { text: sub }) : null);
+  }
+  function renderSheet() {
+    $("#intervalChips").replaceChildren(...INTERVALS.map(([v, label]) => chip(label, null, form.interval === v, () => {
+      form.interval = v; $("#fInterval").value = v || ""; renderSheet();
+    })));
+    const LAST = [["never", "Ещё не делал"], ["today", "Сегодня"], ["date", "Другая дата"]];
+    $("#lastChips").replaceChildren(...LAST.map(([v, label]) => chip(label, null, form.last === v, () => { form.last = v; renderSheet(); })));
+    $("#lastDateField").hidden = form.last !== "date";
+  }
+  function openSheet(prefill) {
+    form.interval = prefill ? prefill[1] : null;
+    form.last = "never";
+    $("#fName").value = prefill ? prefill[0] : "";
+    $("#fInterval").value = form.interval || "";
+    $("#fLastDate").value = isoDate(Date.now() - 7 * DAY);
+    $("#fLastDate").max = isoDate(Date.now());
+    renderSheet();
+    $("#sheet").hidden = false;
+    $("#fName").focus();
+  }
+  function closeSheet() { $("#sheet").hidden = true; $("#addBtn").focus(); }
+
+  $("#sheetPresets").append(...PRESETS.map((p) => chip(p[0], null, null, () => {
+    $("#fName").value = p[0]; form.interval = p[1]; $("#fInterval").value = p[1]; renderSheet();
+  })));
+  $("#emptyPresets").append(...PRESETS.map((p) => chip(p[0], every(p[1]), null, () => { addItem(p[0], p[1], null); toast("Добавлено: " + p[0]); })),
+    h("button", { class: "btn primary small", type: "button", onclick: () => openSheet() }, "Своё дело"));
+  $("#fInterval").addEventListener("input", (e) => { const v = parseInt(e.target.value, 10); form.interval = v > 0 ? v : null; renderSheet(); });
+  $("#addBtn").addEventListener("click", () => openSheet());
+  $("#cancelBtn").addEventListener("click", closeSheet);
+  $("#sheet").addEventListener("click", (e) => { if (e.target.id === "sheet") closeSheet(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
+  $("#form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = $("#fName").value.trim();
+    if (!name) { $("#fName").focus(); return; }
+    let last = null;
+    if (form.last === "today") last = Date.now();
+    else if (form.last === "date" && $("#fLastDate").value) last = fromIsoDate($("#fLastDate").value);
+    const t = parseInt($("#fInterval").value, 10);
+    addItem(name, t > 0 ? Math.min(t, 3650) : null, last);
+    closeSheet();
+    toast("Добавлено: " + name);
+  });
+
+  // ---------- boot ----------
+  function setSync(text) { $("#syncNote").textContent = text; }
+  function useLocal(note) { loadLocal(); Store.mode = "local"; Store.loaded = true; setSync(note); render(); }
+
+  async function boot() {
+    render();
+    let tries = 0;
+    while (!(window.claude && typeof window.claude.use === "function") && tries < 10) { await new Promise((r) => setTimeout(r, 100)); tries++; }
+    if (!(window.claude && typeof window.claude.use === "function")) { useLocal("Данные хранятся в этом браузере"); return; }
+    let db = null, user = null, uid = null;
+    try { [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]); } catch (e) {}
+    try { uid = user ? await user.id() : null; } catch (e) {}
+    if (!db || !uid) { useLocal("Войдите в аккаунт, чтобы данные сохранялись везде. Сейчас они только в этом браузере"); return; }
+    Store.mode = "db";
+    Store.col = db.collection("data/users/" + uid);
+    setSync("Сохраняется в вашем аккаунте · видно только вам");
+    Store.col.onSnapshot((snap) => {
+      const next = {};
+      snap.docs.forEach((d) => { const v = d.data(); if (v) next[d.id] = Object.assign(clone(v), { id: d.id }); });
+      Store.items = next;
+      Store.loaded = true;
+      render();
+    }, () => { useLocal("Нет связи с аккаунтом, поэтому изменения сохраняются только в этом браузере"); });
+  }
+
+  setInterval(render, 10 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+  boot();
+})();
+</script>
