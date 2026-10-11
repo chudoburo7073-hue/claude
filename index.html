@@ -9,14 +9,16 @@
 <title>Когда я последний раз</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Unbounded:wght@700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Unbounded:wght@700;900&display=swap">
 <style>
-/* Layout: a loud hero card with a mood mascot, then one chunky sticker-card per chore. Deliberately single-theme: bright flat colors, thick ink outlines, hard offset shadows. */
+/* Layout: a loud hero mood card, a filter strip, then one sticker-card per chore on a 4px spacing grid.
+   Deliberately single-theme: bright flat colors, ink outlines, hard offset shadows. */
 :root {
-  --page: #e6dcff;
+  --page: #e8dfff;
   --paper: #ffffff;
-  --ink: #111111;
-  --ink-soft: #4a4458;
+  --ink: #121212;
+  --ink-soft: #57506a;
+  --track: #efe9ff;
   --late: #ff5a36;
   --soon: #ffc928;
   --ok: #37d47a;
@@ -24,122 +26,174 @@
   --none: #4fb8ff;
   --today: #ff7ac8;
   --sweat: #2f7bff;
+
   --font-display: "Unbounded", "Arial Black", system-ui, sans-serif;
   --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --line: 3px solid var(--ink);
-  --shadow: 4px 4px 0 var(--ink);
+
+  --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-lg: 18px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px;
+  --h-lg: 48px; --h-md: 44px; --h-sm: 36px; --h-xs: 32px;
+  --bw: 2.5px;
+  --r-card: 24px; --r-field: 14px;
+  --shadow-lg: 5px 5px 0 var(--ink);
+  --shadow: 3px 3px 0 var(--ink);
+  --shadow-sm: 2px 2px 0 var(--ink);
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { background: var(--page); color: var(--ink); font-family: var(--font-body); font-weight: 700; font-size: 16px; line-height: 1.4; }
-button, input { font: inherit; color: inherit; }
+body { background: var(--page); color: var(--ink); font-family: var(--font-body); font-weight: 700; font-size: var(--fs-md); line-height: 1.4; -webkit-font-smoothing: antialiased; }
+button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--sweat); outline-offset: 3px; }
+p { margin: 0; }
 
-.wrap { max-width: 620px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 110px; display: grid; gap: 18px; }
+.wrap { max-width: 600px; margin: 0 auto; padding-inline: 16px; padding-block: var(--s5) 112px; display: grid; gap: var(--s4); }
 
-/* hero */
-.hero { position: relative; border: var(--line); border-radius: 28px; box-shadow: 6px 6px 0 var(--ink); padding: 20px 18px 22px; overflow: hidden; display: grid; gap: 8px; transition: background .4s ease; }
+/* ---------- buttons: three heights, one radius, one border, one press ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); height: var(--h-md); padding: 0 var(--s5); border: var(--bw) solid var(--ink); border-radius: 999px; background: var(--paper); font-weight: 800; font-size: var(--fs-md); line-height: 1; white-space: nowrap; box-shadow: var(--shadow); transition: transform .08s ease, box-shadow .08s ease; }
+.btn:active:not([disabled]) { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.btn--sm { height: var(--h-sm); padding: 0 var(--s4); font-size: var(--fs-sm); box-shadow: var(--shadow-sm); }
+.btn--sm:active:not([disabled]) { transform: translate(2px, 2px); }
+.btn--lg { height: var(--h-lg); padding: 0 var(--s6); font-size: var(--fs-lg); }
+.btn--ink { background: var(--ink); color: var(--paper); box-shadow: 3px 3px 0 var(--today); }
+.btn--ink:active:not([disabled]) { box-shadow: 0 0 0 var(--today); }
+.btn--yellow { background: var(--soon); }
+.btn--green { background: var(--ok); }
+.btn--red { background: var(--late); }
+.btn--ghost { background: transparent; box-shadow: none; border-color: transparent; padding: 0 var(--s3); color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+.btn--ghost:active:not([disabled]) { transform: none; }
+.btn[disabled] { cursor: default; background: var(--paper); color: var(--ink-soft); border-style: dashed; box-shadow: none; }
+.btn .plus { font-size: 1.25em; line-height: 0; margin-top: -2px; }
+
+/* ---------- chips ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: var(--h-xs); padding: 0 var(--s3); border: 2px solid var(--ink); border-radius: 999px; background: var(--paper); font-size: var(--fs-sm); font-weight: 800; line-height: 1; white-space: nowrap; }
+.chip:hover { background: var(--track); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; flex: none; }
+.chip .n { font-variant-numeric: tabular-nums; opacity: .6; }
+.chip--add { border-style: dashed; }
+
+/* ---------- hero ---------- */
+.hero { position: relative; border: 3px solid var(--ink); border-radius: 28px; box-shadow: var(--shadow-lg); padding: var(--s5); overflow: hidden; display: grid; gap: var(--s3); transition: background .4s ease; }
 .hero[data-mood="late"] { background: var(--late); }
 .hero[data-mood="soon"] { background: var(--soon); }
 .hero[data-mood="ok"] { background: var(--ok); }
 .hero[data-mood="new"] { background: var(--new); }
-.hero .date { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
-.hero .date span { white-space: nowrap; font-size: 0.72rem; background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; padding: 3px 10px; }
-.hero h1 { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(2rem, 9.5vw, 3.3rem); line-height: 0.95; letter-spacing: -0.03em; margin: 8px 0 10px; color: var(--paper); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink); text-wrap: balance; }
-.hero .line { margin: 0; font-size: 1.05rem; font-weight: 800; max-width: 26ch; }
-.hero .big-mascot { position: absolute; top: 10px; right: 10px; width: clamp(86px, 24vw, 128px); height: auto; transform-origin: 50% 90%; }
-.hero .date { padding-right: clamp(86px, 24vw, 128px); }
+.hero .date { display: inline-flex; align-items: center; justify-self: start; height: 26px; padding: 0 var(--s3); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+.hero h1 { margin: var(--s2) 0 0; padding-right: 96px; font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(28px, 8.2vw, 46px); line-height: 1; letter-spacing: -0.02em; color: var(--paper); -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; text-shadow: 2px 2px 0 var(--ink); text-wrap: balance; }
+.hero .line { font-size: var(--fs-md); font-weight: 800; max-width: 34ch; text-wrap: pretty; }
+.hero .big-mascot { position: absolute; top: var(--s3); right: var(--s3); width: clamp(84px, 22vw, 120px); height: auto; transform-origin: 50% 90%; }
 .hero .big-mascot.bounce { animation: bounce .7s cubic-bezier(.3, 1.6, .5, 1); }
+@media (min-width: 560px) { .hero h1 { padding-right: 132px; } }
 
-/* stat tiles */
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.tile { border: var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 10px 12px; display: grid; gap: 2px; }
-.tile b { font-family: var(--font-display); font-weight: 900; font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; }
-.tile span { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; }
+/* ---------- stat tiles ---------- */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+.tile { border: var(--bw) solid var(--ink); border-radius: 18px; box-shadow: var(--shadow); padding: var(--s3); display: grid; gap: var(--s1); }
+.tile b { font-family: var(--font-display); font-weight: 900; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+.tile span { font-size: var(--fs-xs); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
 .tile.late { background: var(--late); }
 .tile.soon { background: var(--soon); }
 .tile.all { background: var(--paper); }
 
-.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-.sync { font-size: 0.8rem; color: var(--ink-soft); font-weight: 700; }
+/* ---------- toolbar + filter ---------- */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3); }
+.sync { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--ink-soft); }
+.sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); border: 1.5px solid var(--ink); flex: none; }
+.sync[data-mode="local"]::before { background: var(--soon); }
+.filter { display: flex; gap: var(--s2); overflow-x: auto; padding: 2px 2px var(--s1); margin: -2px; scrollbar-width: none; }
+.filter::-webkit-scrollbar { display: none; }
 
-.btn { border: var(--line); background: var(--paper); border-radius: 999px; padding: 9px 16px; font-weight: 800; box-shadow: 3px 3px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
-.btn:active, .done:active, .chip:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
-.btn.black { background: var(--ink); color: var(--paper); box-shadow: 3px 3px 0 var(--today); font-size: 1.02rem; padding: 11px 20px; }
-.btn.danger { background: var(--late); }
-.btn.small { padding: 6px 12px; font-size: 0.85rem; box-shadow: 2px 2px 0 var(--ink); }
-
-/* chore cards */
-.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.card { background: var(--paper); border: var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 14px; display: grid; gap: 12px; }
-.card-top { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
-.mascot { width: 64px; height: 64px; display: block; }
+/* ---------- chore cards ---------- */
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s4); }
+.card { background: var(--paper); border: 3px solid var(--ink); border-radius: var(--r-card); box-shadow: var(--shadow-lg); padding: var(--s4); display: grid; gap: var(--s4); }
+.card-top { display: grid; grid-template-columns: 56px minmax(0, 1fr) 64px; gap: var(--s3); align-items: start; }
+.mascot { width: 56px; height: 56px; display: block; }
 .mascot.wiggle { animation: wiggle .6s ease; }
-.name { display: block; width: 100%; text-align: left; border: none; background: none; padding: 0; font-family: var(--font-body); font-weight: 900; font-size: 1.08rem; line-height: 1.2; overflow-wrap: anywhere; }
-.name:hover { text-decoration: underline; text-decoration-thickness: 2px; }
-.quip { margin: 3px 0 0; font-size: 0.9rem; font-style: italic; color: var(--ink-soft); }
-.days { border: var(--line); border-radius: 16px; min-width: 62px; padding: 6px 8px; text-align: center; background: var(--paper); }
-.days b { display: block; font-family: var(--font-display); font-weight: 900; font-size: 1.45rem; line-height: 1; font-variant-numeric: tabular-nums; }
-.days span { display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; margin-top: 3px; }
+.title { min-width: 0; display: grid; gap: 6px; padding-top: 2px; }
+.name { display: block; width: 100%; text-align: left; border: none; background: none; padding: 0; font-weight: 900; font-size: var(--fs-lg); line-height: 1.2; overflow-wrap: anywhere; }
+.name:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.sub { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--s2); font-size: var(--fs-sm); line-height: 1.25; }
+.tag { display: inline-flex; align-items: center; height: 20px; padding: 0 var(--s2); border: 1.5px solid var(--ink); border-radius: 999px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.quip { font-style: italic; color: var(--ink-soft); }
+.note { font-size: var(--fs-sm); color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note b { color: var(--ink); font-weight: 800; }
+
+.days { display: grid; place-content: center; gap: 2px; width: 64px; height: 60px; border: var(--bw) solid var(--ink); border-radius: 16px; text-align: center; background: var(--paper); }
+.days b { font-family: var(--font-display); font-weight: 900; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.days span { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.1; }
 .card[data-mood="late"] .days { background: var(--late); }
 .card[data-mood="soon"] .days { background: var(--soon); }
 .card[data-mood="ok"] .days { background: var(--ok); }
 .card[data-mood="today"] .days { background: var(--today); }
-.card[data-mood="new"] .days { background: var(--new); }
+.card[data-mood="new"] .days, .card[data-mood="snoozed"] .days { background: var(--new); }
 .card[data-mood="none"] .days { background: var(--none); }
 
-.card-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
-.meta { margin: 0 0 6px; font-size: 0.84rem; color: var(--ink-soft); }
-.meta .st { color: var(--ink); font-weight: 900; }
-.bar { height: 16px; border: 2.5px solid var(--ink); border-radius: 999px; background: var(--page); overflow: hidden; }
-.bar span { display: block; height: 100%; border-right: 2.5px solid var(--ink); background: var(--ok); transition: width .4s ease; }
+.progress { display: grid; gap: var(--s2); }
+.progress-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); font-size: var(--fs-sm); line-height: 1.2; }
+.progress-head .st { font-weight: 900; }
+.progress-head .rh { color: var(--ink-soft); text-align: right; white-space: nowrap; }
+.bar { height: 14px; border: 2px solid var(--ink); border-radius: 999px; background: var(--track); overflow: hidden; }
+.bar span { display: block; height: 100%; min-width: 8px; border-right: 2px solid var(--ink); border-radius: 999px; background: var(--ok); transition: width .4s ease; }
 .card[data-mood="soon"] .bar span { background: var(--soon); }
-.card[data-mood="late"] .bar span { background: repeating-linear-gradient(-45deg, var(--late) 0 8px, #ff8a6b 8px 16px); border-right: none; animation: stripes 1s linear infinite; background-size: 22.6px 22.6px; }
 .card[data-mood="today"] .bar span { background: var(--today); }
+.card[data-mood="snoozed"] .bar span { background: var(--new); }
+.card[data-mood="late"] .bar span { border-right: none; background: repeating-linear-gradient(-45deg, var(--late) 0 8px, #ff8a6b 8px 16px); background-size: 22.6px 22.6px; animation: stripes 1s linear infinite; }
 
-.done { border: var(--line); background: var(--soon); border-radius: 999px; padding: 10px 18px; font-weight: 900; font-size: 1rem; box-shadow: 3px 3px 0 var(--ink); white-space: nowrap; transition: transform .08s, box-shadow .08s; }
-.card[data-mood="soon"] .done { background: var(--ok); }
-.done[disabled] { background: var(--paper); box-shadow: none; border-style: dashed; cursor: default; font-weight: 800; font-size: 0.9rem; }
+.card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
+.last { font-size: var(--fs-sm); color: var(--ink-soft); }
+.foot-actions { display: flex; align-items: center; gap: var(--s2); margin-left: auto; }
+.snooze { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); padding: var(--s3); border: 2px dashed var(--ink); border-radius: 16px; background: var(--track); }
+.snooze .label { grid-column: 1 / -1; font-size: var(--fs-sm); font-weight: 900; }
+.snooze .btn { padding: 0 var(--s2); }
+.row .btn--danger-end { margin-left: auto; }
 
-.details { border-top: 2.5px dashed var(--ink); padding-top: 12px; display: grid; gap: 14px; }
-.details h3 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
-.hist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
-.hist li { display: flex; justify-content: space-between; gap: 12px; }
+.details { border-top: 2px dashed var(--ink); padding-top: var(--s4); display: grid; gap: var(--s5); }
+.section { display: grid; gap: var(--s2); }
+.section h3 { margin: 0; font-size: var(--fs-xs); font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+.hist { list-style: none; margin: 0; padding: 0; display: grid; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.hist li { display: flex; justify-content: space-between; gap: var(--s3); padding: 6px 0; border-bottom: 1.5px solid var(--track); }
+.hist li:last-child { border-bottom: none; }
 .hist .gap { color: var(--ink-soft); }
-.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
-.field { display: grid; gap: 4px; font-size: 0.85rem; font-weight: 800; }
-.field input { border: var(--line); background: var(--paper); border-radius: 12px; padding: 9px 12px; font-size: 1rem; font-weight: 700; min-width: 0; width: 100%; }
-.confirm { background: var(--late); border: var(--line); border-radius: 16px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-weight: 800; }
+.note-full { font-size: var(--fs-sm); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--track); border-radius: 12px; padding: var(--s3); }
+.row { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+.inline-form { display: flex; gap: var(--s2); align-items: center; }
+.inline-form input { flex: 1; }
 
-/* empty */
-.empty { background: var(--paper); border: var(--line); border-radius: 24px; box-shadow: var(--shadow); padding: 20px 16px; display: grid; gap: 12px; }
-.empty h2 { font-family: var(--font-display); font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin: 0; }
-.empty p { margin: 0; color: var(--ink-soft); }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { border: 2.5px solid var(--ink); background: var(--paper); border-radius: 999px; padding: 6px 12px; font-size: 0.9rem; font-weight: 800; box-shadow: 2px 2px 0 var(--ink); transition: transform .08s, box-shadow .08s; }
-.chip small { font-weight: 700; color: var(--ink-soft); margin-left: 4px; }
-.chip:nth-child(5n+1):hover { background: var(--soon); }
-.chip:nth-child(5n+2):hover { background: var(--today); }
-.chip:nth-child(5n+3):hover { background: var(--ok); }
-.chip:nth-child(5n+4):hover { background: var(--none); }
-.chip:nth-child(5n+5):hover { background: var(--new); }
-.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
-.chip[aria-pressed="true"] small { color: inherit; }
+/* ---------- fields ---------- */
+.field { display: grid; gap: 6px; }
+.field > span, .label { font-size: var(--fs-sm); font-weight: 900; }
+.field .hint { font-size: var(--fs-xs); color: var(--ink-soft); font-weight: 700; }
+.input { height: var(--h-md); border: var(--bw) solid var(--ink); background: var(--paper); border-radius: var(--r-field); padding: 0 var(--s3); font-size: var(--fs-md); font-weight: 700; min-width: 0; width: 100%; }
+textarea.input { height: auto; min-height: 76px; padding: 10px var(--s3); resize: vertical; line-height: 1.35; }
+.input::placeholder { color: #9a93ab; font-weight: 600; }
+.confirm { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; padding: var(--s3); border: var(--bw) solid var(--ink); border-radius: 16px; background: #ffe1d9; font-size: var(--fs-sm); font-weight: 800; }
+.confirm span { flex: 1 1 200px; }
 
-.loading { margin: 0; font-weight: 800; }
+/* ---------- empty ---------- */
+.empty { background: var(--paper); border: 3px solid var(--ink); border-radius: var(--r-card); box-shadow: var(--shadow-lg); padding: var(--s5); display: grid; gap: var(--s4); }
+.empty h2 { font-family: var(--font-display); font-weight: 900; font-size: 20px; text-transform: uppercase; margin: 0; }
+.empty p { color: var(--ink-soft); }
+.presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s2); }
+.preset { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); min-height: var(--h-md); padding: var(--s2) var(--s3); border: 2px solid var(--ink); border-radius: var(--r-field); background: var(--paper); text-align: left; font-size: var(--fs-sm); font-weight: 800; }
+.preset:hover { background: var(--track); }
+.preset small { color: var(--ink-soft); font-weight: 700; white-space: nowrap; }
 
-/* sheet */
-.sheet { position: fixed; inset: 0; background: rgb(17 17 17 / .5); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
-.sheet-card { background: var(--paper); width: min(620px, 100%); max-height: 92%; overflow-y: auto; border: var(--line); border-bottom: none; border-radius: 26px 26px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 16px; }
-.sheet-card h2 { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: 1.35rem; margin: 0; }
-.sheet-card .group { display: grid; gap: 8px; }
-.sheet-card .label { font-size: 0.9rem; font-weight: 900; }
-.sheet-foot { display: flex; justify-content: flex-end; gap: 10px; }
-@media (min-width: 700px) { .sheet { align-items: center; } .sheet-card { border-bottom: var(--line); border-radius: 26px; box-shadow: 6px 6px 0 var(--ink); } }
+.loading { font-weight: 800; color: var(--ink-soft); }
+.nothing { text-align: center; color: var(--ink-soft); padding: var(--s5) 0; }
 
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--paper); border-radius: 999px; padding: 11px 18px; display: flex; gap: 14px; align-items: center; max-width: calc(100% - 32px); box-shadow: 4px 4px 0 var(--today); z-index: 20; font-size: 0.92rem; font-weight: 800; }
-.toast button { background: var(--soon); color: var(--ink); border: 2px solid var(--paper); border-radius: 999px; padding: 3px 10px; font-weight: 900; }
+/* ---------- sheet ---------- */
+.sheet { position: fixed; inset: 0; background: rgb(18 18 18 / .5); display: flex; align-items: flex-end; justify-content: center; z-index: 10; }
+.sheet-card { background: var(--paper); width: min(600px, 100%); max-height: 92%; overflow-y: auto; border: 3px solid var(--ink); border-bottom: none; border-radius: 28px 28px 0 0; padding: var(--s6) var(--s4) calc(var(--s5) + env(safe-area-inset-bottom, 0px)); display: grid; gap: var(--s5); }
+.sheet-card h2 { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: 22px; margin: 0; }
+.group { display: grid; gap: var(--s2); }
+.sheet-foot { display: flex; justify-content: flex-end; gap: var(--s3); padding-top: var(--s1); }
+@media (min-width: 700px) { .sheet { align-items: center; } .sheet-card { border-bottom: 3px solid var(--ink); border-radius: 28px; box-shadow: var(--shadow-lg); padding-inline: var(--s6); } }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--s5) + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: var(--s3); max-width: calc(100% - 32px); min-height: var(--h-md); padding: 6px 6px 6px var(--s5); background: var(--ink); color: var(--paper); border-radius: 999px; box-shadow: 3px 3px 0 var(--today); z-index: 20; font-size: var(--fs-sm); font-weight: 800; }
+.toast > span { padding-block: 6px; }
+.toast:not(:has(button)) { padding-right: var(--s5); }
+.toast button { height: var(--h-xs); padding: 0 var(--s3); background: var(--soon); color: var(--ink); border: 2px solid var(--paper); border-radius: 999px; font-weight: 900; font-size: var(--fs-sm); white-space: nowrap; }
 
 #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
 
@@ -147,15 +201,16 @@ button { cursor: pointer; }
 @keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg) scale(1.1); } 50% { transform: rotate(10deg) scale(1.1); } 75% { transform: rotate(-5deg); } }
 @keyframes stripes { to { background-position: 22.6px 0; } }
 
-@media (max-width: 480px) {
-  .card-top { grid-template-columns: 56px minmax(0, 1fr) auto; gap: 10px; }
-  .mascot { width: 56px; height: 56px; }
-  .card-bottom { grid-template-columns: 1fr; }
-  .done { justify-self: stretch; }
-  .stats { gap: 8px; }
-  .tile { padding: 8px 10px; }
-  .tile b { font-size: 1.4rem; }
-  .tile span { font-size: 0.72rem; }
+@media (max-width: 420px) {
+  .card { padding: var(--s3) var(--s3) var(--s4); gap: var(--s3); }
+  .card-top { grid-template-columns: 48px minmax(0, 1fr) 60px; gap: var(--s3); }
+  .mascot { width: 48px; height: 48px; }
+  .days { width: 60px; height: 56px; }
+  .name { font-size: 17px; }
+  .stats { gap: var(--s2); }
+  .tile { padding: 10px; }
+  .tile b { font-size: 22px; }
+  .tile span { font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero .big-mascot.bounce, .mascot.wiggle, .card[data-mood="late"] .bar span { animation: none; }
@@ -165,32 +220,33 @@ button { cursor: pointer; }
 
 <div class="wrap">
   <header class="hero" id="hero" data-mood="new">
-    <p class="date"><span id="today"></span></p>
-    <div>
-      <h1>Когда я последний раз…</h1>
-      <p class="line" id="heroLine">Тут пока тихо.</p>
-    </div>
+    <span class="date" id="today"></span>
+    <h1>Когда я последний раз…</h1>
+    <p class="line" id="heroLine">Секунду, ищу твои дела…</p>
     <svg class="big-mascot" id="heroMascot" viewBox="0 0 100 100" aria-hidden="true"></svg>
   </header>
 
   <section class="stats" id="stats" aria-live="polite" hidden>
-    <div class="tile late"><b id="cLate">0</b><span>горит</span></div>
-    <div class="tile soon"><b id="cSoon">0</b><span>скоро</span></div>
-    <div class="tile all"><b id="cAll">0</b><span>всего дел</span></div>
+    <div class="tile late"><b id="cLate">0</b><span>Горит</span></div>
+    <div class="tile soon"><b id="cSoon">0</b><span>Скоро</span></div>
+    <div class="tile all"><b id="cAll">0</b><span>Всего дел</span></div>
   </section>
 
   <div class="toolbar">
-    <button class="btn black" id="addBtn" type="button">+ Новое дело</button>
-    <span class="sync" id="syncNote"></span>
+    <button class="btn btn--ink btn--lg" id="addBtn" type="button"><span class="plus">+</span>Новое дело</button>
+    <span class="sync" id="syncNote" data-mode="local"></span>
   </div>
+
+  <nav class="filter" id="filter" aria-label="Категории" hidden></nav>
 
   <p class="loading" id="loading">Будим персонажей…</p>
   <ul class="list" id="list"></ul>
 
   <section class="empty" id="empty" hidden>
     <h2>Пока пусто</h2>
-    <p>Тыкни на любое дело ниже, и у него появится свой персонаж. Он будет нервничать, если про него забыть.</p>
-    <div class="chips" id="emptyPresets"></div>
+    <p>Выбери дело из списка, и у него появится свой персонаж. Он будет нервничать, если про него забыть.</p>
+    <div class="presets" id="emptyPresets"></div>
+    <button class="btn btn--ink" id="emptyAdd" type="button" style="justify-self:start"><span class="plus">+</span>Своё дело</button>
   </section>
 </div>
 
@@ -199,28 +255,32 @@ button { cursor: pointer; }
     <h2 id="formTitle">Новое дело</h2>
     <div class="group">
       <span class="label">Быстрый выбор</span>
-      <div class="chips" id="sheetPresets"></div>
+      <div class="filter" id="sheetPresets"></div>
     </div>
-    <label class="field"><span class="label">Что делаем</span>
-      <input id="fName" name="name" required maxlength="80" placeholder="Например, поменять фильтр в кувшине" autocomplete="off">
+    <label class="field"><span>Что делаем</span>
+      <input class="input" id="fName" name="name" required maxlength="80" placeholder="Например, поменять фильтр в кувшине" autocomplete="off">
     </label>
+    <div class="group">
+      <span class="label">Категория</span>
+      <div class="chips" id="catChips"></div>
+    </div>
     <div class="group">
       <span class="label">Как часто</span>
       <div class="chips" id="intervalChips"></div>
-      <label class="field">Или своё число дней
-        <input id="fInterval" name="interval" type="number" min="1" max="3650" inputmode="numeric" placeholder="пусто: приложение посчитает само">
+      <label class="field"><span class="hint">Или своё число дней. Оставь пустым, и приложение посчитает ритм само.</span>
+        <input class="input" id="fInterval" name="interval" type="number" min="1" max="3650" inputmode="numeric" placeholder="Например, 45">
       </label>
     </div>
     <div class="group">
       <span class="label">Когда было в последний раз</span>
       <div class="chips" id="lastChips"></div>
-      <label class="field" id="lastDateField" hidden>Дата
-        <input id="fLastDate" type="date">
+      <label class="field" id="lastDateField" hidden><span class="hint">Дата</span>
+        <input class="input" id="fLastDate" type="date">
       </label>
     </div>
     <div class="sheet-foot">
       <button class="btn" type="button" id="cancelBtn">Отмена</button>
-      <button class="btn black" type="submit">Добавить</button>
+      <button class="btn btn--ink" type="submit">Добавить</button>
     </div>
   </form>
 </div>
@@ -232,38 +292,47 @@ button { cursor: pointer; }
 (function () {
   const DAY = 864e5;
   const LS_KEY = "kyap.items.v1";
+  const LS_FILTER = "kyap.filter";
   const MAX_HISTORY = 60;
   const DAY_FORMS = ["день", "дня", "дней"];
   const DELO_FORMS = ["дело", "дела", "дел"];
   const MONTHS = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
   const MONTHS_FULL = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
   const WEEKDAYS = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
+  const CATS = {
+    home: ["Дом", "#ffc928"], health: ["Здоровье", "#ff7ac8"], plants: ["Растения", "#37d47a"],
+    people: ["Люди", "#4fb8ff"], tech: ["Техника", "#b79cff"], other: ["Другое", "#ffffff"],
+  };
   const PRESETS = [
-    ["Поменять зубную щётку", 90],
-    ["Сменить постельное бельё", 14],
-    ["Полить цветы", 7],
-    ["Позвонить родителям", 7],
-    ["Почистить чайник от накипи", 30],
-    ["Поменять фильтр для воды", 60],
-    ["Постричься", 35],
-    ["Помыть холодильник", 30],
-    ["Почистить фильтр пылесоса", 30],
-    ["Пройти чекап у врача", 365],
+    ["Поменять зубную щётку", 90, "health"],
+    ["Сменить постельное бельё", 14, "home"],
+    ["Полить цветы", 7, "plants"],
+    ["Позвонить родителям", 7, "people"],
+    ["Почистить чайник от накипи", 30, "home"],
+    ["Поменять фильтр для воды", 60, "home"],
+    ["Постричься", 35, "health"],
+    ["Помыть холодильник", 30, "home"],
+    ["Почистить фильтр пылесоса", 30, "tech"],
+    ["Сделать бэкап телефона", 30, "tech"],
+    ["Пересадить или подкормить растения", 90, "plants"],
+    ["Пройти чекап у врача", 365, "health"],
   ];
-  const INTERVALS = [[null, "Посчитать само"], [7, "Неделя"], [14, "2 недели"], [30, "Месяц"], [90, "3 месяца"], [180, "Полгода"], [365, "Год"]];
-  const EVERY = { 1: "каждый день", 7: "раз в неделю", 14: "раз в две недели", 30: "раз в месяц", 60: "раз в два месяца", 90: "раз в три месяца", 180: "раз в полгода", 365: "раз в год" };
+  const INTERVALS = [[null, "Само"], [7, "Неделя"], [14, "2 недели"], [30, "Месяц"], [90, "3 месяца"], [180, "Полгода"], [365, "Год"]];
+  const EVERY = { 1: "каждый день", 7: "раз в неделю", 14: "раз в 2 недели", 30: "раз в месяц", 60: "раз в 2 месяца", 90: "раз в 3 месяца", 180: "раз в полгода", 365: "раз в год" };
+  const SNOOZES = [[1, "1 день"], [3, "3 дня"], [7, "Неделю"]];
   const QUIPS = {
-    late: ["Оно ждёт. Оно всё помнит.", "Пора, мой друг, пора", "Это уже немного неловко", "Дело тихо обижается", "Ещё чуть-чуть, и станет легендой", "Персонаж начал потеть"],
+    late: ["Оно ждёт. Оно всё помнит.", "Пора, мой друг, пора", "Это уже немного неловко", "Дело тихо обижается", "Персонаж начал потеть"],
     soon: ["Скоро постучится", "Уже на горизонте", "Готовься морально", "Почти пора"],
     ok: ["Спит спокойно", "Всё под контролем", "Можно не думать", "Чилл"],
     today: ["Красота!", "Сделано. Гордимся.", "Можно выдохнуть", "Персонаж счастлив"],
     new: ["Ждёт первой отметки", "Ещё не знакомы", "Новенькое, стесняется"],
-    none: ["Изучаю твой ритм", "Присматриваюсь к тебе", "Ещё одна отметка, и всё пойму"],
+    none: ["Изучаю твой ритм", "Присматриваюсь к тебе", "Ещё отметка, и всё пойму"],
+    snoozed: ["Отложено. Персонаж дремлет", "Взяли паузу", "Дали отсрочку"],
   };
-  const COLORS = { late: "#ff5a36", soon: "#ffc928", ok: "#37d47a", today: "#ff7ac8", new: "#b79cff", none: "#4fb8ff" };
+  const COLORS = { late: "#ff5a36", soon: "#ffc928", ok: "#37d47a", today: "#ff7ac8", new: "#b79cff", none: "#4fb8ff", snoozed: "#b79cff" };
   const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const $ = (s) => document.querySelector(s);
+  const $ = (q) => document.querySelector(q);
   function h(tag, attrs, ...kids) {
     const el = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs || {})) {
@@ -287,12 +356,15 @@ button { cursor: pointer; }
   const every = (n) => EVERY[n] || "раз в " + days(n);
   const newId = () => "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const isoDate = (t) => { const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
-  const fromIsoDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d, 12).getTime(); };
+  const fromIsoDate = (str) => { const [y, m, d] = str.split("-").map(Number); return new Date(y, m - 1, d, 12).getTime(); };
   const clone = (o) => JSON.parse(JSON.stringify(o));
-  const hash = (s) => { let x = 0; for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) | 0; return Math.abs(x); };
+  const hash = (str) => { let x = 0; for (let i = 0; i < str.length; i++) x = (x * 31 + str.charCodeAt(i)) | 0; return Math.abs(x); };
   const pick = (arr, seed) => arr[hash(seed) % arr.length];
+  const catOf = (item) => (CATS[item.cat] ? item.cat : "other");
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
 
-  // ---------- mascots: a body shape (stroke layer under fill layer, so overlapping circles read as one blob) + a face per mood ----------
+  // ---------- mascots: stroke layer under fill layer, so overlapping circles read as one blob; face per mood ----------
   const SVG = "http://www.w3.org/2000/svg";
   function s(tag, attrs) { const el = document.createElementNS(SVG, tag); for (const k in attrs) el.setAttribute(k, attrs[k]); return el; }
   const SHAPES = [
@@ -301,50 +373,45 @@ button { cursor: pointer; }
     [["circle", { cx: 50, cy: 28, r: 18 }], ["circle", { cx: 28, cy: 46, r: 18 }], ["circle", { cx: 72, cy: 46, r: 18 }], ["circle", { cx: 36, cy: 70, r: 18 }], ["circle", { cx: 64, cy: 70, r: 18 }], ["circle", { cx: 50, cy: 52, r: 24 }]],
     [["rect", { x: 18, y: 22, width: 64, height: 66, rx: 18 }], ["circle", { cx: 50, cy: 26, r: 14 }]],
   ];
+  const LINE = { stroke: "#121212", "stroke-width": 4, "stroke-linecap": "round", fill: "none" };
   function eye(g, cx, cy, mood) {
-    if (mood === "today") { g.append(s("path", { d: `M${cx - 6} ${cy + 2} Q${cx} ${cy - 7} ${cx + 6} ${cy + 2}`, fill: "none", stroke: "#111", "stroke-width": 4, "stroke-linecap": "round" })); return; }
-    if (mood === "new") { g.append(s("path", { d: `M${cx - 6} ${cy} Q${cx} ${cy + 5} ${cx + 6} ${cy}`, fill: "none", stroke: "#111", "stroke-width": 4, "stroke-linecap": "round" })); return; }
+    if (mood === "today") { g.append(s("path", { d: `M${cx - 6} ${cy + 2} Q${cx} ${cy - 7} ${cx + 6} ${cy + 2}`, ...LINE })); return; }
+    if (mood === "new" || mood === "snoozed") { g.append(s("path", { d: `M${cx - 6} ${cy} Q${cx} ${cy + 5} ${cx + 6} ${cy}`, ...LINE })); return; }
     const r = mood === "late" ? 9 : 7.5;
-    g.append(s("circle", { cx, cy, r, fill: "#fff", stroke: "#111", "stroke-width": 3 }));
-    const pr = mood === "late" ? 2.6 : 3.8;
-    g.append(s("circle", { cx, cy: cy + (mood === "soon" ? -1 : 1), r: pr, fill: "#111", class: "pupil", "data-cx": cx, "data-cy": cy }));
+    g.append(s("circle", { cx, cy, r, fill: "#fff", stroke: "#121212", "stroke-width": 3 }));
+    g.append(s("circle", { cx, cy: cy + (mood === "soon" ? -1 : 1), r: mood === "late" ? 2.6 : 3.8, fill: "#121212", class: "pupil", "data-cx": cx, "data-cy": cy }));
   }
-  function mascot(mood, seed, cls) {
-    const svg = s("svg", { viewBox: "0 0 100 100", class: cls || "mascot", "aria-hidden": "true" });
-    fillMascot(svg, mood, seed);
-    return svg;
-  }
+  function mascot(mood, seed) { const svg = s("svg", { viewBox: "0 0 100 100", class: "mascot", "aria-hidden": "true" }); fillMascot(svg, mood, seed); return svg; }
   function fillMascot(svg, mood, seed) {
     svg.replaceChildren();
     const shape = SHAPES[hash(seed) % SHAPES.length];
-    const color = COLORS[mood] || COLORS.none;
-    const strokeG = s("g", { fill: "#111", stroke: "#111", "stroke-width": 8, "stroke-linejoin": "round" });
-    const fillG = s("g", { fill: color });
+    const strokeG = s("g", { fill: "#121212", stroke: "#121212", "stroke-width": 8, "stroke-linejoin": "round" });
+    const fillG = s("g", { fill: COLORS[mood] || COLORS.none });
     shape.forEach(([tag, a]) => { strokeG.append(s(tag, a)); fillG.append(s(tag, a)); });
     svg.append(strokeG, fillG);
     const face = s("g", {});
     eye(face, 39, 50, mood); eye(face, 61, 50, mood);
-    const m = { stroke: "#111", "stroke-width": 4, "stroke-linecap": "round", fill: "none" };
-    if (mood === "ok") face.append(s("path", { d: "M41 64 Q50 72 59 64", ...m }));
+    if (mood === "ok") face.append(s("path", { d: "M41 64 Q50 72 59 64", ...LINE }));
     else if (mood === "today") {
-      face.append(s("path", { d: "M39 62 Q50 78 61 62 Z", fill: "#111", stroke: "#111", "stroke-width": 3, "stroke-linejoin": "round" }));
+      face.append(s("path", { d: "M39 62 Q50 78 61 62 Z", fill: "#121212", stroke: "#121212", "stroke-width": 3, "stroke-linejoin": "round" }));
       face.append(s("circle", { cx: 30, cy: 61, r: 4.5, fill: "#fff", opacity: .55 }), s("circle", { cx: 70, cy: 61, r: 4.5, fill: "#fff", opacity: .55 }));
     } else if (mood === "soon") {
-      face.append(s("path", { d: "M42 67 Q46 64 50 67 Q54 70 58 67", ...m }));
-      face.append(s("path", { d: "M32 38 L44 41", ...m, "stroke-width": 3.5 }), s("path", { d: "M68 38 L56 41", ...m, "stroke-width": 3.5 }));
+      face.append(s("path", { d: "M42 67 Q46 64 50 67 Q54 70 58 67", ...LINE }));
+      face.append(s("path", { d: "M32 38 L44 41", ...LINE, "stroke-width": 3.5 }), s("path", { d: "M68 38 L56 41", ...LINE, "stroke-width": 3.5 }));
     } else if (mood === "late") {
-      face.append(s("ellipse", { cx: 50, cy: 69, rx: 6, ry: 7.5, fill: "#111" }));
-      face.append(s("path", { d: "M80 26 Q86 36 80 40 Q74 36 80 26 Z", fill: "#2f7bff", stroke: "#111", "stroke-width": 2.5 }));
-      face.append(s("path", { d: "M88 44 Q92 51 88 54 Q84 51 88 44 Z", fill: "#2f7bff", stroke: "#111", "stroke-width": 2.5 }));
-    } else if (mood === "new") {
-      face.append(s("circle", { cx: 50, cy: 66, r: 3.5, fill: "#111" }));
-      const z = s("text", { x: 74, y: 26, "font-family": "Unbounded, sans-serif", "font-weight": 900, "font-size": 15, fill: "#111" }); z.textContent = "z";
-      const z2 = s("text", { x: 84, y: 14, "font-family": "Unbounded, sans-serif", "font-weight": 900, "font-size": 10, fill: "#111" }); z2.textContent = "z";
+      face.append(s("ellipse", { cx: 50, cy: 69, rx: 6, ry: 7.5, fill: "#121212" }));
+      face.append(s("path", { d: "M80 26 Q86 36 80 40 Q74 36 80 26 Z", fill: "#2f7bff", stroke: "#121212", "stroke-width": 2.5 }));
+      face.append(s("path", { d: "M88 44 Q92 51 88 54 Q84 51 88 44 Z", fill: "#2f7bff", stroke: "#121212", "stroke-width": 2.5 }));
+    } else if (mood === "new" || mood === "snoozed") {
+      face.append(s("circle", { cx: 50, cy: 66, r: 3.5, fill: "#121212" }));
+      const z = s("text", { x: 74, y: 26, "font-family": "Unbounded, sans-serif", "font-weight": 900, "font-size": 15, fill: "#121212" }); z.textContent = "z";
+      const z2 = s("text", { x: 84, y: 14, "font-family": "Unbounded, sans-serif", "font-weight": 900, "font-size": 10, fill: "#121212" }); z2.textContent = "z";
       face.append(z, z2);
-    } else face.append(s("path", { d: "M43 66 L57 66", ...m }));
+    } else face.append(s("path", { d: "M43 66 L57 66", ...LINE }));
     svg.append(face);
   }
 
+  // ---------- rhythm logic ----------
   function learnedInterval(hist) {
     if (hist.length < 2) return null;
     const gaps = [];
@@ -354,7 +421,6 @@ button { cursor: pointer; }
     const mid = g.length >> 1;
     return Math.max(1, Math.round(g.length % 2 ? g[mid] : (g[mid - 1] + g[mid]) / 2));
   }
-
   function info(item, now) {
     const hist = item.history || [];
     const last = hist.length ? hist[hist.length - 1] : null;
@@ -368,11 +434,12 @@ button { cursor: pointer; }
       left = interval - since;
       status = left < 0 ? "late" : left <= Math.max(1, Math.round(interval * 0.15)) ? "soon" : "ok";
     }
+    const snoozeLeft = item.snoozeUntil ? daysBetween(now, item.snoozeUntil) : 0;
+    if ((status === "late" || status === "soon") && snoozeLeft > 0) status = "snoozed";
     const mood = since === 0 ? "today" : status;
-    return { last, since, learned, interval, ratio, left, status, mood };
+    return { last, since, learned, interval, ratio, left, status, mood, snoozeLeft };
   }
-
-  const RANK = { late: 0, soon: 1, new: 2, ok: 3, none: 4 };
+  const RANK = { late: 0, soon: 1, new: 2, snoozed: 3, ok: 3, none: 4 };
   function sortKey(a, b) {
     if (RANK[a.i.status] !== RANK[b.i.status]) return RANK[a.i.status] - RANK[b.i.status];
     if (a.i.ratio != null && b.i.ratio != null) return b.i.ratio - a.i.ratio;
@@ -386,43 +453,48 @@ button { cursor: pointer; }
     put(item) { this.items[item.id] = item; render(); this.persist(item.id, false); },
     remove(id) { delete this.items[id]; render(); this.persist(id, true); },
     persist(id, del) {
-      if (this.mode === "local") { saveLocal(); return; }
+      if (this.mode === "local") { if (!lsSet(LS_KEY, JSON.stringify(this.items))) toast("Браузер не дал сохранить данные."); return; }
       const ref = this.col.doc(id);
       const data = del ? null : clone(this.items[id]);
       this.queues[id] = (this.queues[id] || Promise.resolve())
         .then(() => (del ? ref.delete() : ref.set(data)))
         .catch((e) => toast(e && e.code === "quota_exceeded"
-          ? "Место закончилось: удалите несколько дел и попробуйте снова."
+          ? "Место закончилось. Удали несколько дел и попробуй снова."
           : e && e.code === "invalid_argument"
             ? "Не получилось сохранить: у этой ссылки нет прав на запись."
-            : "Не получилось сохранить. Проверьте соединение и повторите."));
+            : "Не получилось сохранить. Проверь соединение и повтори."));
     },
   };
-  function loadLocal() {
-    try { const raw = localStorage.getItem(LS_KEY); Store.items = raw ? JSON.parse(raw) || {} : {}; } catch (e) { Store.items = {}; }
-  }
-  function saveLocal() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(Store.items)); } catch (e) { toast("Браузер не дал сохранить данные."); }
-  }
+  function loadLocal() { try { const raw = lsGet(LS_KEY); Store.items = raw ? JSON.parse(raw) || {} : {}; } catch (e) { Store.items = {}; } }
 
   // ---------- UI ----------
-  const ui = { open: null, edit: null, confirm: null, justDone: null };
+  const ui = { open: null, edit: null, confirm: null, snooze: null, justDone: null, filter: lsGet(LS_FILTER) || "all" };
   let heroMood = null;
 
   function renderHero(rows, counts) {
     let mood, line;
-    if (!Store.loaded) { mood = "new"; line = "Секунду, ищу ваши дела…"; }
+    if (!Store.loaded) { mood = "new"; line = "Секунду, ищу твои дела…"; }
     else if (!rows.length) { mood = "new"; line = "Тут пока тихо. Добавь первое дело и познакомься с персонажем."; }
     else if (counts.late) { mood = "late"; line = "Горит " + counts.late + " " + plural(counts.late, DELO_FORMS) + ". Без паники. Ну, почти."; }
     else if (counts.soon) { mood = "soon"; line = "Скоро позовут " + counts.soon + " " + plural(counts.soon, DELO_FORMS) + ". Готовься морально."; }
     else { mood = "ok"; line = "Всё под контролем. Можно гордиться собой."; }
     $("#heroLine").textContent = line;
-    const hero = $("#hero");
-    hero.dataset.mood = mood;
-    if (mood !== heroMood) {
-      heroMood = mood;
-      fillMascot($("#heroMascot"), mood === "ok" && ui.justDone ? "today" : mood, "hero-3");
-    }
+    $("#hero").dataset.mood = mood;
+    const faceMood = mood === "ok" && ui.justDone ? "today" : mood;
+    if (faceMood !== heroMood) { heroMood = faceMood; fillMascot($("#heroMascot"), faceMood, "hero-3"); }
+  }
+
+  function renderFilter(rows) {
+    const nav = $("#filter");
+    const present = {};
+    rows.forEach((r) => { const c = catOf(r.item); present[c] = (present[c] || 0) + 1; });
+    const keys = Object.keys(CATS).filter((k) => present[k]);
+    if (ui.filter !== "all" && !present[ui.filter]) ui.filter = "all";
+    nav.hidden = !Store.loaded || keys.length < 2;
+    if (nav.hidden) { nav.replaceChildren(); return; }
+    const mk = (key, label, n, color) => h("button", { class: "chip", type: "button", "aria-pressed": String(ui.filter === key), onclick: () => { ui.filter = key; lsSet(LS_FILTER, key); render(); } },
+      color ? h("span", { class: "dot", style: "background:" + color }) : null, label, h("span", { class: "n", text: n }));
+    nav.replaceChildren(mk("all", "Все", rows.length), ...keys.map((k) => mk(k, CATS[k][0], present[k], CATS[k][1])));
   }
 
   function render() {
@@ -434,6 +506,7 @@ button { cursor: pointer; }
     const counts = { late: 0, soon: 0 };
     rows.forEach((r) => { if (r.i.status in counts) counts[r.i.status]++; });
     renderHero(rows, counts);
+    renderFilter(rows);
 
     $("#stats").hidden = !Store.loaded || !rows.length;
     $("#cLate").textContent = counts.late;
@@ -441,8 +514,19 @@ button { cursor: pointer; }
     $("#cAll").textContent = rows.length;
 
     $("#empty").hidden = !Store.loaded || rows.length > 0;
-    $("#list").replaceChildren(...(Store.loaded ? rows.map(renderCard) : []));
+    const shown = ui.filter === "all" ? rows : rows.filter((r) => catOf(r.item) === ui.filter);
+    $("#list").replaceChildren(...(Store.loaded ? shown.map(renderCard) : []));
     ui.justDone = null;
+  }
+
+  function statusText(item, i) {
+    if (i.status === "snoozed") return "Отложено до " + fmtDate(item.snoozeUntil);
+    if (i.status === "late") return "Просрочено на " + days(-i.left);
+    if (i.since === 0) return i.interval ? "Снова через " + days(i.interval) : "Отмечено сегодня";
+    if (i.status === "soon") return i.left === 0 ? "Сегодня по графику" : "Пора через " + days(i.left);
+    if (i.status === "ok") return "Снова через " + days(i.left);
+    if (i.status === "new") return "Отметь, когда сделаешь";
+    return "Ритм появится после второй отметки";
   }
 
   function renderCard({ item, i }) {
@@ -450,58 +534,76 @@ button { cursor: pointer; }
     let n, u;
     if (i.since == null) { n = "?"; u = "не было"; }
     else if (i.since === 0) { n = "0"; u = "сегодня"; }
-    else { n = String(i.since); u = plural(i.since, DAY_FORMS) + " назад"; }
-
-    let st;
-    if (i.status === "late") st = "просрочено на " + days(-i.left);
-    else if (i.since === 0) st = i.interval ? "следующий раз через " + days(i.interval) : "отмечено сегодня";
-    else if (i.status === "soon") st = i.left === 0 ? "сегодня по графику" : "пора через " + days(i.left);
-    else if (i.status === "ok") st = "следующий раз через " + days(i.left);
-    else if (i.status === "new") st = "отметь, когда сделаешь";
-    else st = "ритм появится после второй отметки";
-    const rhythm = item.target ? every(item.target) : i.learned ? every(i.learned) + " (по твоей истории)" : "";
-    const lastTxt = i.last != null ? "последний раз " + fmtDate(i.last) : "";
+    else { n = String(i.since); u = plural(i.since, DAY_FORMS); }
+    const rhythm = item.target ? every(item.target) : i.learned ? "≈ " + every(i.learned) : "";
+    const cat = catOf(item);
 
     const m = mascot(i.mood, item.id);
     if (ui.justDone === item.id && !reduceMotion) m.classList.add("wiggle");
 
-    const card = h("li", { class: "card", "data-mood": i.mood },
+    const canSnooze = i.status === "late" || i.status === "soon";
+    const foot = h("div", { class: "card-foot" },
+      h("span", { class: "last", text: i.last != null ? "Последний раз " + fmtDate(i.last) : "Ещё ни разу" }),
+      h("div", { class: "foot-actions" },
+        canSnooze ? h("button", { class: "btn btn--ghost btn--sm", type: "button", "aria-expanded": String(ui.snooze === item.id), onclick: () => { ui.snooze = ui.snooze === item.id ? null : item.id; render(); } }, "Отложить") : null,
+        i.since === 0
+          ? h("button", { class: "btn", type: "button", disabled: true }, "Сделано ✓")
+          : h("button", { class: "btn " + (i.status === "soon" ? "btn--green" : "btn--yellow"), type: "button", onclick: (e) => markDone(item.id, Date.now(), e.currentTarget) }, "Сделал!")));
+
+    const snoozeRow = ui.snooze === item.id && canSnooze ? h("div", { class: "snooze" },
+      h("span", { class: "label", text: "Напомнить через" }),
+      SNOOZES.map(([dd, label]) => h("button", { class: "btn btn--sm", type: "button", onclick: () => snooze(item.id, dd) }, label))) : null;
+
+    return h("li", { class: "card", "data-mood": i.mood },
       h("div", { class: "card-top" },
         m,
-        h("div", {},
+        h("div", { class: "title" },
           h("button", { class: "name", type: "button", "aria-expanded": String(open), onclick: () => { ui.open = open ? null : item.id; ui.edit = ui.confirm = null; render(); } }, item.name),
-          h("p", { class: "quip", text: pick(QUIPS[i.mood], item.id + i.mood) })),
-        h("div", { class: "days", "aria-label": i.since == null ? "ещё не отмечено" : u === "сегодня" ? "сегодня" : n + " " + u }, h("b", { text: n }), h("span", { text: u }))),
-      h("div", { class: "card-bottom" },
-        h("div", {},
-          h("p", { class: "meta" }, h("span", { class: "st", text: st }), [rhythm, lastTxt].filter(Boolean).map((t) => " · " + t).join("")),
-          i.ratio != null ? h("div", { class: "bar", role: "img", "aria-label": "Прошло " + Math.round(i.ratio * 100) + "% интервала" }, h("span", { style: "width:" + Math.max(i.since === 0 ? 4 : 0, Math.min(100, Math.round(i.ratio * 100))) + "%" })) : null),
-        i.since === 0
-          ? h("button", { class: "done", type: "button", disabled: true }, "Сделано сегодня")
-          : h("button", { class: "done", type: "button", onclick: (e) => markDone(item.id, Date.now(), e.currentTarget) }, "Сделал!")),
-      open ? renderDetails(item) : null);
-    return card;
+          h("div", { class: "sub" },
+            h("span", { class: "tag", style: "background:" + CATS[cat][1], text: CATS[cat][0] }),
+            h("span", { class: "quip", text: pick(QUIPS[i.mood], item.id + i.mood) })),
+          item.note ? h("p", { class: "note", title: item.note }, h("b", { text: "Заметка: " }), item.note) : null),
+        h("div", { class: "days", role: "img", "aria-label": i.since == null ? "ещё не отмечено" : i.since === 0 ? "сегодня" : n + " " + u + " назад" }, h("b", { text: n }), h("span", { text: u }))),
+      h("div", { class: "progress" },
+        h("div", { class: "progress-head" }, h("span", { class: "st", text: statusText(item, i) }), rhythm ? h("span", { class: "rh", text: rhythm }) : null),
+        i.ratio != null ? h("div", { class: "bar", role: "img", "aria-label": "Прошло " + Math.round(i.ratio * 100) + "% интервала" }, h("span", { style: "width:" + Math.min(100, Math.round(i.ratio * 100)) + "%" })) : null),
+      snoozeRow,
+      foot,
+      open ? renderDetails(item, i) : null);
   }
 
-  function renderDetails(item) {
+  function renderDetails(item, i) {
     const box = h("div", { class: "details" });
     if (ui.edit === item.id) {
-      const nameIn = h("input", { id: "edit-name-" + item.id, value: item.name, maxlength: "80" });
-      const intIn = h("input", { id: "edit-int-" + item.id, type: "number", min: "1", max: "3650", inputmode: "numeric", value: item.target || "", placeholder: "пусто: посчитать само" });
+      const nameIn = h("input", { class: "input", id: "edit-name-" + item.id, value: item.name, maxlength: "80" });
+      const intIn = h("input", { class: "input", id: "edit-int-" + item.id, type: "number", min: "1", max: "3650", inputmode: "numeric", value: item.target || "", placeholder: "Пусто: посчитать само" });
+      const noteIn = h("textarea", { class: "input", id: "edit-note-" + item.id, maxlength: "300", placeholder: "Модель фильтра, размер, где купить…" });
+      noteIn.value = item.note || "";
+      let cat = catOf(item);
+      const catBox = h("div", { class: "chips" });
+      const drawCats = () => catBox.replaceChildren(...Object.entries(CATS).map(([k, [label, color]]) =>
+        h("button", { class: "chip", type: "button", "aria-pressed": String(cat === k), onclick: () => { cat = k; drawCats(); } }, h("span", { class: "dot", style: "background:" + color }), label)));
+      drawCats();
       box.append(
-        h("label", { class: "field" }, "Название", nameIn),
-        h("label", { class: "field" }, "Интервал в днях", intIn),
-        h("div", { class: "actions" },
-          h("button", { class: "btn black small", type: "button", onclick: () => {
+        h("label", { class: "field" }, h("span", { text: "Название" }), nameIn),
+        h("div", { class: "group" }, h("span", { class: "label", text: "Категория" }), catBox),
+        h("label", { class: "field" }, h("span", { text: "Интервал в днях" }), intIn),
+        h("label", { class: "field" }, h("span", { text: "Заметка" }), noteIn),
+        h("div", { class: "row" },
+          h("button", { class: "btn btn--ink btn--sm", type: "button", onclick: () => {
             const name = nameIn.value.trim();
             if (!name) { nameIn.focus(); return; }
             const t = parseInt(intIn.value, 10);
-            const next = clone(item); next.name = name; next.target = t > 0 ? Math.min(t, 3650) : null;
+            const next = clone(item);
+            next.name = name; next.cat = cat; next.target = t > 0 ? Math.min(t, 3650) : null;
+            next.note = noteIn.value.trim().slice(0, 300) || null;
             ui.edit = null; Store.put(next); toast("Сохранено");
           } }, "Сохранить"),
-          h("button", { class: "btn small", type: "button", onclick: () => { ui.edit = null; render(); } }, "Отмена")));
+          h("button", { class: "btn btn--sm", type: "button", onclick: () => { ui.edit = null; render(); } }, "Отмена")));
       return box;
     }
+
+    if (item.note) box.append(h("div", { class: "section" }, h("h3", { text: "Заметка" }), h("p", { class: "note-full", text: item.note })));
 
     const hist = (item.history || []).slice();
     const histList = h("ul", { class: "hist" });
@@ -510,25 +612,27 @@ button { cursor: pointer; }
       const gap = idx > 0 ? daysBetween(hist[idx - 1], t) : null;
       histList.append(h("li", {}, h("span", { text: fmtDate(t) }), h("span", { class: "gap", text: gap != null ? "через " + days(gap) : "первая отметка" })));
     });
-    box.append(h("div", {}, h("h3", { text: "История" }), hist.length ? histList : h("p", { class: "meta", text: "Отметок ещё нет." })));
+    box.append(h("div", { class: "section" }, h("h3", { text: "История · " + hist.length + " " + plural(hist.length, ["отметка", "отметки", "отметок"]) }),
+      hist.length ? histList : h("p", { class: "last", text: "Отметок ещё нет." })));
 
-    const dateIn = h("input", { id: "past-" + item.id, type: "date", max: isoDate(Date.now()), value: isoDate(Date.now() - DAY) });
-    box.append(h("div", { class: "actions" },
-      h("label", { class: "field" }, "Сделал раньше? Отметь дату", dateIn),
-      h("button", { class: "btn small", type: "button", onclick: () => { if (dateIn.value) markDone(item.id, fromIsoDate(dateIn.value)); } }, "Отметить")));
+    const dateIn = h("input", { class: "input", id: "past-" + item.id, type: "date", max: isoDate(Date.now()), value: isoDate(Date.now() - DAY), "aria-label": "Дата" });
+    box.append(h("div", { class: "section" }, h("h3", { text: "Сделал раньше?" }),
+      h("div", { class: "inline-form" }, dateIn,
+        h("button", { class: "btn", type: "button", onclick: () => { if (dateIn.value) markDone(item.id, fromIsoDate(dateIn.value)); } }, "Отметить"))));
 
     if (ui.confirm === item.id) {
-      box.append(h("div", { class: "confirm" }, "Удалить «" + item.name + "» вместе с историей и персонажем?",
-        h("button", { class: "btn small", type: "button", onclick: () => { ui.confirm = ui.open = null; Store.remove(item.id); toast("Удалено. Персонаж ушёл в закат."); } }, "Удалить"),
-        h("button", { class: "btn small", type: "button", onclick: () => { ui.confirm = null; render(); } }, "Отмена")));
+      box.append(h("div", { class: "confirm" }, h("span", { text: "Удалить «" + item.name + "» вместе с историей?" }),
+        h("button", { class: "btn btn--red btn--sm", type: "button", onclick: () => { ui.confirm = ui.open = null; Store.remove(item.id); toast("Удалено. Персонаж ушёл в закат."); } }, "Удалить"),
+        h("button", { class: "btn btn--sm", type: "button", onclick: () => { ui.confirm = null; render(); } }, "Отмена")));
     } else {
-      box.append(h("div", { class: "actions" },
-        h("button", { class: "btn small", type: "button", onclick: () => { ui.edit = item.id; render(); } }, "Изменить"),
-        hist.length ? h("button", { class: "btn small", type: "button", onclick: () => {
+      box.append(h("div", { class: "row" },
+        h("button", { class: "btn btn--sm", type: "button", onclick: () => { ui.edit = item.id; render(); } }, "Изменить"),
+        i.status === "snoozed" ? h("button", { class: "btn btn--sm", type: "button", onclick: () => { const next = clone(item); delete next.snoozeUntil; Store.put(next); } }, "Вернуть из отложенных") : null,
+        hist.length ? h("button", { class: "btn btn--sm", type: "button", onclick: () => {
           const prev = clone(item); const next = clone(item); next.history.pop(); Store.put(next);
           toast("Последняя отметка убрана", () => Store.put(prev));
-        } }, "Убрать последнюю отметку") : null,
-        h("button", { class: "btn danger small", type: "button", onclick: () => { ui.confirm = item.id; render(); } }, "Удалить")));
+        } }, "Убрать отметку") : null,
+        h("button", { class: "btn btn--red btn--sm btn--danger-end", type: "button", onclick: () => { ui.confirm = item.id; render(); } }, "Удалить")));
     }
     return box;
   }
@@ -540,8 +644,9 @@ button { cursor: pointer; }
     const prev = clone(item);
     const next = clone(item);
     next.history = (next.history || []).concat(t).sort((a, b) => a - b).slice(-MAX_HISTORY);
+    delete next.snoozeUntil;
     ui.justDone = id;
-    heroMood = null;
+    if (ui.snooze === id) ui.snooze = null;
     Store.put(next);
     const when = daysBetween(t, Date.now());
     if (btn && when === 0) {
@@ -553,8 +658,19 @@ button { cursor: pointer; }
     toast((when === 0 ? CHEERS[Math.floor(Math.random() * CHEERS.length)] + " " : "") + "«" + item.name + "» отмечено " + (when === 0 ? "сегодня" : fmtDate(t)), () => Store.put(prev));
   }
 
-  function addItem(name, target, lastTs) {
-    Store.put({ id: newId(), name, target: target || null, history: lastTs ? [lastTs] : [], createdAt: Date.now() });
+  function snooze(id, dd) {
+    const item = Store.items[id];
+    if (!item) return;
+    const prev = clone(item);
+    const next = clone(item);
+    next.snoozeUntil = sod(Date.now()) + dd * DAY + DAY / 2;
+    ui.snooze = null;
+    Store.put(next);
+    toast("Напомню " + (dd === 1 ? "завтра" : fmtDate(next.snoozeUntil)), () => Store.put(prev));
+  }
+
+  function addItem(name, target, lastTs, cat) {
+    Store.put({ id: newId(), name, cat: cat || "other", target: target || null, history: lastTs ? [lastTs] : [], note: null, createdAt: Date.now() });
   }
 
   // ---------- confetti ----------
@@ -577,7 +693,7 @@ button { cursor: pointer; }
       parts.forEach((p) => {
         p.vy += 0.45; p.x += p.vx; p.y += p.vy; p.r += p.vr;
         ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
-        ctx.fillStyle = p.c; ctx.strokeStyle = "#111"; ctx.lineWidth = 1.5;
+        ctx.fillStyle = p.c; ctx.strokeStyle = "#121212"; ctx.lineWidth = 1.5;
         ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
         ctx.restore();
       });
@@ -610,23 +726,24 @@ button { cursor: pointer; }
   }
 
   // ---------- add sheet ----------
-  const form = { interval: null, last: "never" };
-  function chip(label, sub, pressed, onclick) {
-    return h("button", { class: "chip", type: "button", "aria-pressed": pressed == null ? null : String(pressed), onclick }, label, sub ? h("small", { text: sub }) : null);
+  const form = { interval: null, last: "never", cat: "home" };
+  function chip(label, pressed, onclick, color) {
+    return h("button", { class: "chip", type: "button", "aria-pressed": pressed == null ? null : String(pressed), onclick },
+      color ? h("span", { class: "dot", style: "background:" + color }) : null, label);
   }
   function renderSheet() {
-    $("#intervalChips").replaceChildren(...INTERVALS.map(([v, label]) => chip(label, null, form.interval === v, () => {
+    $("#catChips").replaceChildren(...Object.entries(CATS).map(([k, [label, color]]) => chip(label, form.cat === k, () => { form.cat = k; renderSheet(); }, color)));
+    $("#intervalChips").replaceChildren(...INTERVALS.map(([v, label]) => chip(label, form.interval === v, () => {
       form.interval = v; $("#fInterval").value = v || ""; renderSheet();
     })));
     const LAST = [["never", "Ещё не делал"], ["today", "Сегодня"], ["date", "Другая дата"]];
-    $("#lastChips").replaceChildren(...LAST.map(([v, label]) => chip(label, null, form.last === v, () => { form.last = v; renderSheet(); })));
+    $("#lastChips").replaceChildren(...LAST.map(([v, label]) => chip(label, form.last === v, () => { form.last = v; renderSheet(); })));
     $("#lastDateField").hidden = form.last !== "date";
   }
-  function openSheet(prefill) {
-    form.interval = prefill ? prefill[1] : null;
-    form.last = "never";
-    $("#fName").value = prefill ? prefill[0] : "";
-    $("#fInterval").value = form.interval || "";
+  function openSheet() {
+    form.interval = null; form.last = "never"; form.cat = ui.filter !== "all" ? ui.filter : "home";
+    $("#fName").value = "";
+    $("#fInterval").value = "";
     $("#fLastDate").value = isoDate(Date.now() - 7 * DAY);
     $("#fLastDate").max = isoDate(Date.now());
     renderSheet();
@@ -635,13 +752,14 @@ button { cursor: pointer; }
   }
   function closeSheet() { $("#sheet").hidden = true; $("#addBtn").focus(); }
 
-  $("#sheetPresets").append(...PRESETS.map((p) => chip(p[0], null, null, () => {
-    $("#fName").value = p[0]; form.interval = p[1]; $("#fInterval").value = p[1]; renderSheet();
+  $("#sheetPresets").append(...PRESETS.map((p) => chip(p[0], null, () => {
+    $("#fName").value = p[0]; form.interval = p[1]; form.cat = p[2]; $("#fInterval").value = p[1]; renderSheet();
   })));
-  $("#emptyPresets").append(...PRESETS.map((p) => chip(p[0], every(p[1]), null, () => { addItem(p[0], p[1], null); toast("Добавлено: " + p[0]); })),
-    h("button", { class: "btn black small", type: "button", onclick: () => openSheet() }, "Своё дело"));
+  $("#emptyPresets").append(...PRESETS.map((p) => h("button", { class: "preset", type: "button", onclick: () => { addItem(p[0], p[1], null, p[2]); toast("Добавлено: " + p[0]); } },
+    h("span", { text: p[0] }), h("small", { text: every(p[1]) }))));
+  $("#emptyAdd").addEventListener("click", openSheet);
   $("#fInterval").addEventListener("input", (e) => { const v = parseInt(e.target.value, 10); form.interval = v > 0 ? v : null; renderSheet(); });
-  $("#addBtn").addEventListener("click", () => openSheet());
+  $("#addBtn").addEventListener("click", openSheet);
   $("#cancelBtn").addEventListener("click", closeSheet);
   $("#sheet").addEventListener("click", (e) => { if (e.target.id === "sheet") closeSheet(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
@@ -653,34 +771,34 @@ button { cursor: pointer; }
     if (form.last === "today") last = Date.now();
     else if (form.last === "date" && $("#fLastDate").value) last = fromIsoDate($("#fLastDate").value);
     const t = parseInt($("#fInterval").value, 10);
-    addItem(name, t > 0 ? Math.min(t, 3650) : null, last);
+    addItem(name, t > 0 ? Math.min(t, 3650) : null, last, form.cat);
     closeSheet();
-    toast("Добавлено: " + name + ". Знакомься с персонажем!");
+    toast("Добавлено: " + name);
   });
 
   // ---------- boot ----------
-  function setSync(text) { $("#syncNote").textContent = text; }
-  function useLocal(note) { loadLocal(); Store.mode = "local"; Store.loaded = true; setSync(note); render(); }
+  function setSync(mode, text) { const el = $("#syncNote"); el.dataset.mode = mode; el.textContent = text; }
+  function useLocal(note) { loadLocal(); Store.mode = "local"; Store.loaded = true; setSync("local", note); render(); }
 
   async function boot() {
     render();
     let tries = 0;
     while (!(window.claude && typeof window.claude.use === "function") && tries < 10) { await new Promise((r) => setTimeout(r, 100)); tries++; }
-    if (!(window.claude && typeof window.claude.use === "function")) { useLocal("Данные хранятся в этом браузере"); return; }
+    if (!(window.claude && typeof window.claude.use === "function")) { useLocal("Хранится в этом браузере"); return; }
     let db = null, user = null, uid = null;
     try { [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]); } catch (e) {}
     try { uid = user ? await user.id() : null; } catch (e) {}
-    if (!db || !uid) { useLocal("Войди в аккаунт, чтобы данные сохранялись везде. Сейчас они только в этом браузере"); return; }
+    if (!db || !uid) { useLocal("Хранится только в этом браузере. Войди в аккаунт, чтобы видеть дела везде"); return; }
     Store.mode = "db";
     Store.col = db.collection("data/users/" + uid);
-    setSync("Сохраняется в твоём аккаунте · видно только тебе");
+    setSync("cloud", "Сохраняется в аккаунте · видно только тебе");
     Store.col.onSnapshot((snap) => {
       const next = {};
       snap.docs.forEach((d) => { const v = d.data(); if (v) next[d.id] = Object.assign(clone(v), { id: d.id }); });
       Store.items = next;
       Store.loaded = true;
       render();
-    }, () => { useLocal("Нет связи с аккаунтом, поэтому изменения сохраняются только в этом браузере"); });
+    }, () => { useLocal("Нет связи с аккаунтом, изменения сохраняются только в этом браузере"); });
   }
 
   setInterval(render, 10 * 60 * 1000);
